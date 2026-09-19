@@ -3,9 +3,9 @@
 A command-line application being developed to track Counter-Strike teams,
 browse match history, and compare team performance.
 
-The current version retrieves recent match history from CSAPI and prints the
-JSON response. The team and result limit are currently fixed to Vitality
-(`9565`) and two matches.
+The current version retrieves recent match history from CSAPI and saves the
+JSON response to `data/match_history.json`. The team and result limit are
+currently fixed to Vitality (`9565`) and two matches.
 
 ## Requirements
 
@@ -28,8 +28,10 @@ uv run main.py
 uv run main.py
 ```
 
-The command prints a JSON array containing the two most recent available
-matches for Vitality. The exact matches depend on the current CSAPI data.
+The command saves a JSON array containing the two most recent available matches
+for Vitality and prints the output path. The exact matches depend on the current
+CSAPI data. The `data/` directory contains local runtime data and is excluded
+from Git.
 
 ## Development checks
 

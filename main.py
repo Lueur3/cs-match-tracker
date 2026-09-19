@@ -1,6 +1,9 @@
 import asyncio
+from pathlib import Path
 
 import httpx
+
+MATCH_HISTORY_PATH = Path("data/match_history.json")
 
 
 async def fetch_team_match_history(
@@ -16,10 +19,18 @@ async def fetch_team_match_history(
     return response
 
 
+def save_match_history(file_path: Path, match_history: bytes) -> None:
+    parent_dir = file_path.parent
+    parent_dir.mkdir(parents=True, exist_ok=True)
+
+    file_path.write_bytes(match_history)
+
+
 async def run() -> None:
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await fetch_team_match_history(client, 9565, 2)
-        print(response.json())
+        save_match_history(MATCH_HISTORY_PATH, response.content)
+        print(f"Data saved: {MATCH_HISTORY_PATH}")
 
 
 def main() -> None:
