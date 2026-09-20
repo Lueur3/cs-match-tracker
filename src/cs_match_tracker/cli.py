@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import sys
 from pathlib import Path
 
 import httpx
@@ -17,11 +18,19 @@ async def update_match_history(team_id: int, limit: int) -> None:
 
 
 def handle_update(team_id: int, limit: int) -> None:
-    asyncio.run(update_match_history(team_id, limit))
+    try:
+        asyncio.run(update_match_history(team_id, limit))
+    except httpx.HTTPError as e:
+        print(f"Failed to update match history: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def handle_show() -> None:
-    mh.show_match_history(MATCH_HISTORY_PATH)
+    try:
+        mh.show_match_history(MATCH_HISTORY_PATH)
+    except FileNotFoundError:
+        print("No saved match history. Run the update command first.", file=sys.stderr)
+        sys.exit(1)
 
 
 def build_parser() -> argparse.ArgumentParser:
