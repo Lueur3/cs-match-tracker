@@ -28,13 +28,13 @@ uv sync
 Fetch and save the two most recent matches for team `9565`:
 
 ```bash
-uv run main.py update --team-id 9565 --limit 2
+uv run cs-match-tracker update --team-id 9565 --limit 2
 ```
 
 Display the saved match history:
 
 ```bash
-uv run main.py show
+uv run cs-match-tracker show
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ uv run main.py show
 ### Update match history
 
 ```bash
-uv run main.py update --team-id <team-id> [--limit <count>]
+uv run cs-match-tracker update --team-id <team-id> [--limit <count>]
 ```
 
 `--team-id` is required. `--limit` defaults to `5`.
@@ -54,7 +54,7 @@ data and is excluded from Git.
 ### Show saved match history
 
 ```bash
-uv run main.py show
+uv run cs-match-tracker show
 ```
 
 The command reads `data/match_history.json` and prints the event, date,
@@ -69,4 +69,5 @@ Run the code quality checks from the repository root:
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy --strict .
+uv run pytest
 ```

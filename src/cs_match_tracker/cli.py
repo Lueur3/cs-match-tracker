@@ -1,0 +1,49 @@
+import argparse
+import asyncio
+from pathlib import Path
+
+import httpx
+
+import cs_match_tracker.match_history as mh
+
+MATCH_HISTORY_PATH = Path("data/match_history.json")
+
+
+async def update_match_history(team_id: int, limit: int) -> None:
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await mh.fetch_team_match_history(client, team_id, limit)
+        mh.save_match_history(MATCH_HISTORY_PATH, response.content)
+        print(f"Data saved: {MATCH_HISTORY_PATH}")
+
+
+def handle_update(team_id: int, limit: int) -> None:
+    asyncio.run(update_match_history(team_id, limit))
+
+
+def handle_show() -> None:
+    mh.show_match_history(MATCH_HISTORY_PATH)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Get team match history")
+
+    subparsers = parser.add_subparsers(dest="subcommand", required=True)
+
+    update = subparsers.add_parser("update", help="Update match history")
+    update.add_argument("--team-id", type=int, help="Team id", required=True)
+    update.add_argument("--limit", type=int, default=5, help="Limit of match history")
+
+    subparsers.add_parser("show", help="Show match history")
+
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+
+    match args.subcommand:
+        case "update":
+            handle_update(args.team_id, args.limit)
+        case "show":
+            handle_show()

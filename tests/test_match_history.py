@@ -3,7 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from main import read_match_history, save_match_history, show_match_history
+from cs_match_tracker.match_history import (
+    read_match_history,
+    save_match_history,
+    show_match_history,
+)
 
 
 def test_save_and_show_match_history(
