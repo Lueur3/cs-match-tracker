@@ -1,46 +1,72 @@
 # cs-match-tracker
 
-A command-line application being developed to track Counter-Strike teams,
-browse match history, and compare team performance.
+A command-line application for retrieving Counter-Strike team match history from
+CSAPI, storing it locally, and displaying a readable match summary.
 
-The current version retrieves recent match history from CSAPI and saves the
-JSON response to `data/match_history.json`. The team and result limit are
-currently fixed to Vitality (`9565`) and two matches.
+## Features
+
+- Fetch recent match history for a team by its CSAPI identifier.
+- Limit the number of matches returned by the API.
+- Store the raw JSON response in `data/match_history.json`.
+- Display saved events, teams, maps, scores, and winners without another API
+  request.
 
 ## Requirements
 
-- Python 3.14 or newer. The project selects Python 3.14 via `.python-version`.
-- [uv](https://docs.astral.sh/uv/).
+- Python 3.14 or newer
+- [uv](https://docs.astral.sh/uv/)
+- An internet connection when updating match history
 
-## Run
+## Quick Start
 
-Run the following command from the repository root.
-
-### Windows (PowerShell)
-
-```powershell
-uv run main.py
-```
-
-### Linux and macOS
+Install the project dependencies from the repository root:
 
 ```bash
-uv run main.py
+uv sync
 ```
 
-The command saves a JSON array containing the two most recent available matches
-for Vitality and prints the output path. The exact matches depend on the current
-CSAPI data. The `data/` directory contains local runtime data and is excluded
-from Git.
+Fetch and save the two most recent matches for team `9565`:
 
-## Development checks
+```bash
+uv run main.py update --team-id 9565 --limit 2
+```
 
-Run these commands from the repository root:
+Display the saved match history:
+
+```bash
+uv run main.py show
+```
+
+## Usage
+
+### Update match history
+
+```bash
+uv run main.py update --team-id <team-id> [--limit <count>]
+```
+
+`--team-id` is required. `--limit` defaults to `5`.
+
+The command writes the CSAPI response to `data/match_history.json`, replacing
+the previously saved response. The `data/` directory contains local runtime
+data and is excluded from Git.
+
+### Show saved match history
+
+```bash
+uv run main.py show
+```
+
+The command reads `data/match_history.json` and prints the event, date,
+best-of format, participating teams, map scores, and winner for each saved
+match. Run `update` before `show` when no local history exists.
+
+## Development
+
+Run the code quality checks from the repository root:
 
 ```bash
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy --strict .
 ```
-
-Ruff checks lint rules and formatting. mypy checks the project in strict mode.
