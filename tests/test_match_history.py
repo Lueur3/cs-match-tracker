@@ -1,13 +1,16 @@
+import datetime
 import json
 from pathlib import Path
 
 import pytest
 
 from cs_match_tracker.match_history import (
+    load_match_history,
     read_match_history,
     save_match_history,
     show_match_history,
 )
+from cs_match_tracker.schemas import Match
 
 
 def test_save_and_show_match_history(
@@ -15,19 +18,16 @@ def test_save_and_show_match_history(
 ) -> None:
     test_data = [
         {
-            "team1": {
-                "name": "Vitality",
-            },
-            "team2": {
-                "name": "FURIA",
-            },
+            "id": 2396948,
+            "team1": {"id": 9565, "name": "Vitality", "score": 2, "rank": 4},
+            "team2": {"id": 8297, "name": "FURIA", "score": 1, "rank": 7},
             "maps": [
-                {"name": "Nuke", "team1_score": 6, "team2_score": 13},
+                {"id": 5, "name": "Nuke", "team1_score": 6, "team2_score": 13},
             ],
             "best_of": 3,
             "date": "2026-09-04",
             "event": "BLAST Open Porto 2026",
-            "winner": {"name": "Vitality"},
+            "winner": {"id": 9565, "name": "Vitality"},
         },
     ]
 
@@ -37,6 +37,7 @@ def test_save_and_show_match_history(
 
     save_match_history(test_file, binary_data)
     show_match_history(test_file)
+    matches = load_match_history(test_file)
 
     captured = capsys.readouterr().out
 
@@ -52,5 +53,13 @@ def test_save_and_show_match_history(
         ]
     )
 
+    assert len(matches) == 1
+
+    match = matches[0]
+
+    assert isinstance(match, Match)
+    assert match.date == datetime.date(2026, 9, 4)
+    assert match.id == test_data[0]["id"]
+    assert match.team1.name == "Vitality"
     assert read_match_history(test_file) == binary_data
     assert captured == expected_output
