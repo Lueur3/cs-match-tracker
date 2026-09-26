@@ -1,33 +1,30 @@
 import argparse
 import asyncio
 import sys
-from pathlib import Path
 
-import httpx
+import httpx2
 
 import cs_match_tracker.match_history as mh
 
-MATCH_HISTORY_PATH = Path("data/match_history.json")
-
 
 async def update_match_history(team_id: int, limit: int) -> None:
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx2.AsyncClient(timeout=10.0) as client:
         response = await mh.fetch_team_match_history(client, team_id, limit)
-        mh.save_match_history(MATCH_HISTORY_PATH, response.content)
-        print(f"Data saved: {MATCH_HISTORY_PATH}")
+        mh.save_match_history(mh.MATCH_HISTORY_PATH, response.content)
+        print(f"Data saved: {mh.MATCH_HISTORY_PATH}")
 
 
 def handle_update(team_id: int, limit: int) -> None:
     try:
         asyncio.run(update_match_history(team_id, limit))
-    except httpx.HTTPError as e:
+    except httpx2.HTTPError as e:
         print(f"Failed to update match history: {e}", file=sys.stderr)
         sys.exit(1)
 
 
 def handle_show() -> None:
     try:
-        mh.show_match_history(MATCH_HISTORY_PATH)
+        mh.show_match_history(mh.MATCH_HISTORY_PATH)
     except FileNotFoundError:
         print("No saved match history. Run the update command first.", file=sys.stderr)
         sys.exit(1)

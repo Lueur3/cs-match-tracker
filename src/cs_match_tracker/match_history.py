@@ -1,14 +1,16 @@
 from pathlib import Path
 
-import httpx
+import httpx2
 from pydantic import TypeAdapter
 
 from cs_match_tracker.schemas import Match
 
+MATCH_HISTORY_PATH = Path("data/match_history.json")
+
 
 async def fetch_team_match_history(
-    client: httpx.AsyncClient, team_id: int, limit: int
-) -> httpx.Response:
+    client: httpx2.AsyncClient, team_id: int, limit: int
+) -> httpx2.Response:
     params = {"limit": limit}
 
     response = await client.get(
