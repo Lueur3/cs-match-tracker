@@ -6,6 +6,7 @@ from pydantic import TypeAdapter
 from cs_match_tracker.schemas import Match
 
 MATCH_HISTORY_PATH = Path("data/match_history.json")
+MATCHES_ADAPTER: TypeAdapter[list[Match]] = TypeAdapter(list[Match])
 
 
 async def fetch_team_match_history(
@@ -21,6 +22,16 @@ async def fetch_team_match_history(
     return response
 
 
+async def update_match_history(
+    client: httpx2.AsyncClient, file_path: Path, team_id: int, limit: int
+) -> list[Match]:
+    response = await fetch_team_match_history(client, team_id, limit)
+    matches = MATCHES_ADAPTER.validate_json(response.content)
+    save_match_history(file_path, response.content)
+
+    return matches
+
+
 def save_match_history(file_path: Path, match_history: bytes) -> None:
     parent_dir = file_path.parent
     parent_dir.mkdir(parents=True, exist_ok=True)
@@ -30,9 +41,9 @@ def save_match_history(file_path: Path, match_history: bytes) -> None:
 
 def load_match_history(file_path: Path) -> list[Match]:
     raw_bytes = read_match_history(file_path)
-    data = TypeAdapter(list[Match]).validate_json(raw_bytes)
+    matches = MATCHES_ADAPTER.validate_json(raw_bytes)
 
-    return data
+    return matches
 
 
 def read_match_history(file_path: Path) -> bytes:

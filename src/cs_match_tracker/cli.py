@@ -3,21 +3,22 @@ import asyncio
 import sys
 
 import httpx2
+from pydantic import ValidationError
 
 import cs_match_tracker.match_history as mh
 
 
 async def update_match_history(team_id: int, limit: int) -> None:
     async with httpx2.AsyncClient(timeout=10.0) as client:
-        response = await mh.fetch_team_match_history(client, team_id, limit)
-        mh.save_match_history(mh.MATCH_HISTORY_PATH, response.content)
+        await mh.update_match_history(client, mh.MATCH_HISTORY_PATH, team_id, limit)
+
         print(f"Data saved: {mh.MATCH_HISTORY_PATH}")
 
 
 def handle_update(team_id: int, limit: int) -> None:
     try:
         asyncio.run(update_match_history(team_id, limit))
-    except httpx2.HTTPError as e:
+    except (httpx2.HTTPError, ValidationError) as e:
         print(f"Failed to update match history: {e}", file=sys.stderr)
         sys.exit(1)
 

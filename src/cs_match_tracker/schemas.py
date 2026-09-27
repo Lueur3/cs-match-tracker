@@ -31,3 +31,8 @@ class Match(BaseModel):
     date: datetime.date
     event: str
     winner: Winner
+
+
+class UpdateMatchesRequest(BaseModel):
+    team_id: int
+    limit: int = 5
