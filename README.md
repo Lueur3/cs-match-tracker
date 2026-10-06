@@ -10,7 +10,7 @@ from CSAPI, storing it locally, and exposing saved results through an HTTP API.
 - Store the raw JSON response in `data/match_history.json`.
 - Display saved events, teams, maps, scores, and winners without another API
   request.
-- Retrieve saved match history through a FastAPI endpoint.
+- Retrieve and filter saved match history through a FastAPI endpoint.
 - Update match history through the CLI or HTTP API.
 
 ## Requirements
@@ -85,8 +85,26 @@ Retrieve the saved matches:
 curl http://127.0.0.1:8000/matches
 ```
 
-`GET /matches` returns `200 OK` with a JSON array of saved matches. If
-`data/match_history.json` does not exist, it returns `404 Not Found`:
+Filter the saved matches by team and an inclusive date range:
+
+```bash
+curl 'http://127.0.0.1:8000/matches?team_id=7020&date_from=2026-08-01&date_to=2026-09-01'
+```
+
+All query parameters are optional and can be combined:
+
+- `team_id` — include matches where the team appears as either participant.
+- `date_from` — include matches on or after this date in `YYYY-MM-DD` format.
+- `date_to` — include matches on or before this date in `YYYY-MM-DD` format.
+
+The endpoint filters the local snapshot in `data/match_history.json`; it does
+not request new data from CSAPI. Without query parameters, it returns the entire
+snapshot. A filter with no matches returns `200 OK` with an empty array. An
+invalid parameter format or a `date_from` value after `date_to` returns
+`422 Unprocessable Entity`.
+
+If `data/match_history.json` does not exist, `GET /matches` returns
+`404 Not Found`:
 
 ```json
 {
