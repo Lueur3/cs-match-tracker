@@ -1,5 +1,7 @@
+from datetime import date
+
 import httpx2
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from pydantic import ValidationError
 
 import cs_match_tracker.match_history as mh
@@ -9,13 +11,23 @@ app = FastAPI(title="CS Match Tracker")
 
 
 @app.get("/matches", response_model=list[Match])
-def read_matches() -> list[Match]:
+def read_matches(
+    team_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> list[Match]:
     try:
         match_history = mh.load_match_history(mh.MATCH_HISTORY_PATH)
-        return match_history
     except FileNotFoundError as exc:
         raise HTTPException(
-            status_code=404, detail="Match history not found. Please run update first."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match history not found. Please run update first.",
+        ) from exc
+    try:
+        return mh.filter_matches(match_history, team_id, date_from, date_to)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
         ) from exc
 
 
@@ -29,5 +41,6 @@ async def update_matches(body: UpdateMatchesRequest) -> list[Match]:
             return matches
     except (httpx2.HTTPError, ValidationError) as exc:
         raise HTTPException(
-            status_code=502, detail="Failed to update matches from external service."
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to update matches from external service.",
         ) from exc

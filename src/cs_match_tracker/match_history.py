@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 
 import httpx2
@@ -48,6 +49,37 @@ def load_match_history(file_path: Path) -> list[Match]:
 
 def read_match_history(file_path: Path) -> bytes:
     return file_path.read_bytes()
+
+
+def filter_matches(
+    matches: list[Match],
+    team_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> list[Match]:
+
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise ValueError("date_from cannot be after date_to")
+
+    filtered: list[Match] = []
+
+    for match in matches:
+        if (
+            team_id is not None
+            and match.team1.id != team_id
+            and match.team2.id != team_id
+        ):
+            continue
+
+        if date_from is not None and match.date < date_from:
+            continue
+
+        if date_to is not None and match.date > date_to:
+            continue
+
+        filtered.append(match)
+
+    return filtered
 
 
 def show_match_history(file_path: Path) -> None:

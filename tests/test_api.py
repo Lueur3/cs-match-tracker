@@ -27,6 +27,38 @@ def test_data() -> list[dict[str, object]]:
     ]
 
 
+@pytest.fixture
+def test_data_2() -> list[dict[str, object]]:
+    return [
+        {
+            "id": 2396949,
+            "team1": {"id": 7020, "name": "Spirit", "score": 2, "rank": 1},
+            "team2": {"id": 11283, "name": "Falcons", "score": 0, "rank": 3},
+            "maps": [
+                {"id": 3, "name": "Ancient", "team1_score": 13, "team2_score": 11},
+                {"id": 5, "name": "Nuke", "team1_score": 13, "team2_score": 8},
+            ],
+            "best_of": 3,
+            "date": "2026-09-05",
+            "event": "BLAST Open Porto 2026",
+            "winner": {"id": 7020, "name": "Spirit"},
+        },
+        {
+            "id": 2396943,
+            "team1": {"id": 7020, "name": "Spirit", "score": 2, "rank": 1},
+            "team2": {"id": 8297, "name": "FURIA", "score": 0, "rank": 7},
+            "maps": [
+                {"id": 11, "name": "Cache", "team1_score": 13, "team2_score": 5},
+                {"id": 3, "name": "Ancient", "team1_score": 13, "team2_score": 10},
+            ],
+            "best_of": 3,
+            "date": "2026-08-31",
+            "event": "BLAST Open Porto 2026",
+            "winner": {"id": 7020, "name": "Spirit"},
+        },
+    ]
+
+
 def test_get_matches_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, test_data: list[dict[str, object]]
 ) -> None:
@@ -143,3 +175,86 @@ def test_update_matches_invalid_payload_preserves_file(
         "detail": "Failed to update matches from external service."
     }
     assert fake_file.read_bytes() == old_bytes
+
+
+def test_correct_filtered_matches(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    test_data_2: list[dict[str, object]],
+) -> None:
+
+    binary_data = json.dumps(test_data_2, ensure_ascii=False).encode("utf-8")
+
+    fake_file = tmp_path / "matches.json"
+
+    mh.save_match_history(fake_file, binary_data)
+
+    monkeypatch.setattr(mh, "MATCH_HISTORY_PATH", fake_file)
+
+    client = TestClient(app)
+    response = client.get(
+        "/matches",
+        params={"team_id": 7020, "date_from": "2026-08-01", "date_to": "2026-09-01"},
+    )
+
+    result = response.json()
+
+    assert response.status_code == 200
+    assert result == [test_data_2[1]]
+
+
+def test_empty_filtered_matches(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    test_data_2: list[dict[str, object]],
+) -> None:
+    binary_data = json.dumps(test_data_2, ensure_ascii=False).encode("utf-8")
+
+    fake_file = tmp_path / "matches.json"
+
+    mh.save_match_history(fake_file, binary_data)
+
+    monkeypatch.setattr(mh, "MATCH_HISTORY_PATH", fake_file)
+
+    client = TestClient(app)
+    response = client.get(
+        "/matches",
+        params={"team_id": 1, "date_from": "2026-08-01", "date_to": "2026-09-01"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_wrong_format_filtered_matches() -> None:
+    client = TestClient(app)
+
+    response = client.get(
+        "/matches",
+        params={"date_from": "not a date"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_wrong_date_range(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    test_data_2: list[dict[str, object]],
+) -> None:
+    binary_data = json.dumps(test_data_2, ensure_ascii=False).encode("utf-8")
+
+    fake_file = tmp_path / "matches.json"
+
+    mh.save_match_history(fake_file, binary_data)
+
+    monkeypatch.setattr(mh, "MATCH_HISTORY_PATH", fake_file)
+    client = TestClient(app)
+
+    response = client.get(
+        "/matches",
+        params={"date_from": "2026-09-10", "date_to": "2026-09-01"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "date_from cannot be after date_to"
